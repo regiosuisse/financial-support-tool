@@ -1,0 +1,39 @@
+image: docker:24
+
+definitions:
+  services:
+    docker:
+      memory: 5120
+  steps:
+    - step: &e2e-test
+        name: 'Build, Install & Test'
+        max-time: 30
+        caches:
+          - docker
+        services:
+          - docker
+        size: 2x
+        script:
+          - export DOCKER_BUILDKIT=0
+          - apk update
+          - apk add zip
+          - docker-compose build
+          - docker-compose -f docker-compose.yml up -d
+          - docker exec financial-support-tool_node bash -c "npm install"
+          - docker exec financial-support-tool_node bash -c "npm run build"
+          - docker exec financial-support-tool_node bash -c "npm run post_build"
+          - docker-compose down -v
+          - cd ./build && zip -r ./financial-support-tool.zip * && cd ../
+          - pipe: atlassian/bitbucket-upload-file:0.1.2
+            variables:
+              BITBUCKET_USERNAME: $BITBUCKET_USERNAME
+              BITBUCKET_APP_PASSWORD: $BITBUCKET_APP_PASSWORD
+              FILENAME: './build/financial-support-tool.zip'
+
+pipelines:
+  branches:
+    '{dev,master}':
+      - step: *e2e-test
+  tags:
+    'v*':
+      - step: *e2e-test

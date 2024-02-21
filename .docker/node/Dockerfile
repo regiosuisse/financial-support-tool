@@ -1,0 +1,5 @@
+FROM node:16
+
+WORKDIR /var/app
+
+EXPOSE 3000

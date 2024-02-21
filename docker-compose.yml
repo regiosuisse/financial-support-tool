@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+
+  node:
+    container_name: financial-support-tool_node
+    build: .docker/node
+    volumes:
+      - .:/var/app
+    stdin_open: true
+    tty: true
+    ports:
+      - '3000:3000'
